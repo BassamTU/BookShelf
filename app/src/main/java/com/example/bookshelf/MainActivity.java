@@ -134,7 +134,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
                                     bookJSON.getString(Book.JSON_TITLE),
                                     bookJSON.getString(Book.JSON_AUTHOR),
                                     bookJSON.getString(Book.JSON_COVER_URL),
-                                    (bookJSON.getInt(Book.JSON_DURATION))));
+                                    bookJSON.getInt(Book.JSON_DURATION)));
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }

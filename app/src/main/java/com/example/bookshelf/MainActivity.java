@@ -5,7 +5,9 @@ import androidx.fragment.app.FragmentManager;
 
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
+import android.widget.SeekBar;
 import android.widget.Toast;
 
 import com.android.volley.RequestQueue;
@@ -20,6 +22,8 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import edu.temple.audiobookplayer.AudiobookService;
+
 
 public class MainActivity extends AppCompatActivity implements BookListFragment.BookSelectedInterface {
 
@@ -38,6 +42,12 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
 
     EditText searchEditText;
 
+    Button pause;
+    Button stop;
+    SeekBar seekbar;
+    AudiobookService.MediaControlBinder mediaControlBinder;
+    int bookid = -1;
+
     private final String SEARCH_API = "https://kamorris.com/lab/abp/booksearch.php?search=";
 
     @Override
@@ -46,7 +56,25 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
         setContentView(R.layout.activity_main);
 
         searchEditText = findViewById(R.id.searchEditText);
+        pause = findViewById(R.id.button4);
+        stop = findViewById(R.id.button5);
+        seekbar = findViewById(R.id.seekBar);
+        seekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                mediaControlBinder.play(bookid,progress);
+            }
 
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
         /*
         Perform a search
          */
@@ -84,6 +112,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
                 .replace(R.id.container1, bookListFragment)
         .commit();
 
+        
         /*
         If we have two containers available, load a single instance
         of BookDetailsFragment to display all selected books.

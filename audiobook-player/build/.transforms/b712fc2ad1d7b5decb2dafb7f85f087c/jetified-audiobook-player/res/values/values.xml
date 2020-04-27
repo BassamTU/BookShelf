@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorAccent">#D81B60</color>
+    <color name="colorPrimary">#008577</color>
+    <color name="colorPrimaryDark">#00574B</color>
+    <string name="app_name">AudiobookPlayer</string>
+    <string name="notification_channel">AUDIOBOOK_CONTROL</string>
+    <string name="notification_channel_description">Control audiobook playback</string>
+    <string name="notification_playing_description">Open app to control playback</string>
+    <string name="notification_playing_title">AudioBook is playing</string>
+    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+        <!-- Customize your theme here. -->
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+    </style>
+</resources>

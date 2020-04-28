@@ -1,5 +1,6 @@
 package com.example.bookshelf;
 
+import android.content.Context;
 import android.os.Bundle;
 
 import androidx.fragment.app.Fragment;
@@ -7,6 +8,7 @@ import androidx.fragment.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -19,6 +21,10 @@ public class BookDetailsFragment extends Fragment {
 
     private static final String BOOK_KEY = "book";
     private Book book;
+
+    Button play;
+    private BookDetailsInterface mListener;
+    Context c;
 
     TextView titleTextView, authorTextView;
     ImageView coverImageView;
@@ -56,6 +62,14 @@ public class BookDetailsFragment extends Fragment {
         authorTextView = v.findViewById(R.id.authorTextView);
         coverImageView = v.findViewById(R.id.coverImageView);
 
+        play = v.findViewById(R.id.button);
+        play.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mListener.playBook(book);
+            }
+        });
+
         /*
         Because this fragment can be created with or without
         a book to display when attached, we need to make sure
@@ -64,6 +78,26 @@ public class BookDetailsFragment extends Fragment {
         if (book != null)
             displayBook(book);
         return v;
+    }
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        if (context instanceof BookDetailsInterface) {
+            mListener = (BookDetailsInterface) context;
+        } else {
+            throw new RuntimeException(context.toString()
+                    + " must implement OnFragmentInteractionListener");
+        }
+        this.c = context;
+    }
+
+    @Override
+    public void onDetach(){
+        super.onDetach();
+        mListener = null;
+    }
+    public interface BookDetailsInterface{
+        void playBook (Book book);
     }
 
     /*

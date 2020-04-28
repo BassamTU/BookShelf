@@ -3,7 +3,16 @@ package com.example.bookshelf;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.FragmentManager;
 
+import android.app.IntentService;
+import android.content.ComponentName;
+import android.content.Intent;
+import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.IBinder;
+import android.os.Message;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -25,7 +34,7 @@ import java.util.HashMap;
 import edu.temple.audiobookplayer.AudiobookService;
 
 
-public class MainActivity extends AppCompatActivity implements BookListFragment.BookSelectedInterface {
+public class MainActivity extends AppCompatActivity implements BookListFragment.BookSelectedInterface, BookDetailsFragment.BookDetailsInterface {
 
     private static final String BOOKS_KEY = "books";
     private static final String SELECTED_BOOK_KEY = "selectedBook";
@@ -46,7 +55,16 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
     Button stop;
     SeekBar seekbar;
     AudiobookService.MediaControlBinder mediaControlBinder;
-    int bookid = -1;
+    int bookId = -1;
+
+    Intent service;
+    String nowPlayingBookTitle;
+    boolean isPlaying;
+    boolean connected;
+
+    int nowPlayingBookDuration;
+
+    private SharedPreferences sharedPreferences;
 
     private final String SEARCH_API = "https://kamorris.com/lab/abp/booksearch.php?search=";
 
@@ -62,7 +80,10 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
         seekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                mediaControlBinder.play(bookid,progress);
+                //mediaControlBinder.play(bookId,progress);
+                if(mediaControlBinder != null){
+                    mediaControlBinder.seekTo(progress);
+                }
             }
 
             @Override
@@ -112,7 +133,34 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
                 .replace(R.id.container1, bookListFragment)
         .commit();
 
-        
+        service = new Intent (this, AudiobookService.class);
+        bindService(service,serviceConnection,BIND_AUTO_CREATE);
+        setTitle(nowPlayingBookTitle);
+        pause.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (connected){
+                    //sharedPreferences.edit().putInt(bookId+"",seekbar.getProgress()).commit();
+                    mediaControlBinder.pause();
+
+                }
+            }
+        });
+        stop.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mediaControlBinder.stop();
+                nowPlayingBookTitle = "Now Playing: ";
+                setTitle(nowPlayingBookTitle);
+                //sharedPreferences.edit().putInt(bookId+"",0).commit();
+                seekbar.setProgress(0);
+                isPlaying = false;
+                bookId = -1;
+                stopService(service);
+
+            }
+
+        });
         /*
         If we have two containers available, load a single instance
         of BookDetailsFragment to display all selected books.
@@ -125,8 +173,10 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
         if (twoPane) {
             if (selectedBook != null)
                 bookDetailsFragment = BookDetailsFragment.newInstance(selectedBook);
+
             else
                 bookDetailsFragment = new BookDetailsFragment();
+
 
             fm.beginTransaction()
                     .replace(R.id.container2, bookDetailsFragment)
@@ -141,6 +191,43 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
             }
         }
     }
+    ServiceConnection serviceConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            mediaControlBinder = ((AudiobookService.MediaControlBinder) service);
+            connected = true;
+            mediaControlBinder.setProgressHandler(progressHandler);
+        }
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            connected = false;
+            mediaControlBinder = null;
+        }
+    };
+
+    //Seek Bar Handler
+    Handler progressHandler = new Handler(new Handler.Callback() {
+        @Override
+        public boolean handleMessage(Message msg) {
+
+            if (msg.obj != null) {
+                AudiobookService.BookProgress bookProgress = (AudiobookService.BookProgress) msg.obj;
+                if (bookProgress.getProgress() < nowPlayingBookDuration) {
+                    seekbar.setProgress(bookProgress.getProgress());
+                } else if (bookProgress.getProgress() == nowPlayingBookDuration) {
+                    mediaControlBinder.stop();
+                    nowPlayingBookTitle = "Now Playing: ";
+                    setTitle(nowPlayingBookTitle);
+                    seekbar.setProgress(0);
+                    isPlaying = false;
+                    bookId = -1;
+                }
+            }
+            return false;
+        }
+
+    });
+
 
     /*
     Fetch a set of "books" from from the web service API
@@ -213,6 +300,15 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
     }
 
     @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if(connected) {
+            unbindService(serviceConnection);
+            connected = false;
+        }
+    }
+
+    @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
 
@@ -220,4 +316,23 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
         outState.putParcelableArrayList(BOOKS_KEY, books);
         outState.putParcelable(SELECTED_BOOK_KEY, selectedBook);
     }
-}
+    
+    @Override
+    public void playBook(Book book) {
+        //add seekBar values
+        startService(service);
+        bookId = book.id;
+        seekbar.setMax(book.duration);
+        String title = "Now Playing: " + book.title;
+        setTitle(title);
+        nowPlayingBookTitle= title;
+        nowPlayingBookDuration = book.duration;
+        //playing title
+        mediaControlBinder.play(bookId);
+        Log.d("This is is playing","sas");
+
+
+        //mediaControlBinder.play(book.id);
+        isPlaying = true;
+
+    }}

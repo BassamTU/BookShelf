@@ -15,9 +15,9 @@ public class Book implements Parcelable {
     public final static String JSON_COVER_URL = "cover_url";
     public final static String JSON_DURATION = "duration";
 
-    private int id;
-    private String title, author, coverUrl;
-    private int duration;
+    int id;
+    String title, author, coverUrl;
+    int duration;
 
     public Book(int id, String title, String author, String coverUrl, int duration) {
         this.id = id;
